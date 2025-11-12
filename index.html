@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neon Workflow Grid</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    :root {
+      color-scheme: dark;
+      --bg: #030916;
+      --grid: rgba(94, 255, 199, 0.08);
+      --panel: rgba(8, 20, 40, 0.85);
+      --node-border: rgba(94, 255, 199, 0.45);
+      --text: #e6f8ff;
+      --accent: #63ffd9;
+      --accent-2: #ffe066;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Space Grotesk', 'JetBrains Mono', system-ui, sans-serif;
+      min-height: 100vh;
+      background: radial-gradient(circle at 30% 10%, rgba(35, 120, 255, 0.2), transparent 45%),
+        radial-gradient(circle at 70% 0%, rgba(0, 255, 170, 0.25), transparent 40%),
+        var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    .app-shell {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .flow-board {
+      position: relative;
+      width: min(1800px, 96vw);
+      height: min(1100px, 96vh);
+      margin: auto;
+      border-radius: 26px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(20px);
+      box-shadow: 0 30px 140px rgba(0, 0, 0, 0.6);
+    }
+
+    .flow-board::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+        linear-gradient(0deg, var(--grid) 1px, transparent 1px);
+      background-size: 120px 120px;
+      opacity: 0.4;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .flow-board::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, rgba(15, 200, 150, 0.15), transparent 55%);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .vision-feed {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #01050c;
+      z-index: 0;
+    }
+
+    .vision-feed::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(0, 0, 0, 0.4), transparent 55%);
+      mix-blend-mode: screen;
+      pointer-events: none;
+    }
+
+    .vision-feed video,
+    .vision-feed canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+
+    .vision-feed video {
+      filter: saturate(140%) contrast(110%) brightness(0.9);
+    }
+
+    .vision-feed canvas {
+      mix-blend-mode: screen;
+      opacity: 0.85;
+      pointer-events: none;
+    }
+
+    .vision-tag {
+      position: absolute;
+      bottom: 1.2rem;
+      right: 1.4rem;
+      padding: 0.4rem 1rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      letter-spacing: 0.3em;
+      font-size: 0.72rem;
+      background: rgba(0, 12, 9, 0.4);
+      z-index: 4;
+    }
+
+    .canvas-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    .flow-grid {
+      position: absolute;
+      inset: 0;
+      padding: 3.5rem;
+      z-index: 5;
+    }
+
+    .flow-connections {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 4;
+    }
+
+    .flow-nodes {
+      position: absolute;
+      inset: 0;
+      z-index: 6;
+    }
+
+    .flow-node {
+      position: absolute;
+      width: 240px;
+      background: var(--panel);
+      border-radius: 18px;
+      padding: 1rem 1.2rem 0.8rem;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
+      cursor: grab;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .flow-node:active {
+      cursor: grabbing;
+    }
+
+    .flow-node[data-active="true"] {
+      border-color: var(--node-border);
+      box-shadow: 0 25px 65px rgba(99, 255, 217, 0.25);
+    }
+
+    .flow-node.is-selected {
+      border-color: rgba(255, 224, 102, 0.9);
+      box-shadow: 0 25px 80px rgba(255, 224, 102, 0.35);
+    }
+
+    .flow-node.is-related {
+      border-color: rgba(99, 255, 217, 0.7);
+      box-shadow: 0 20px 60px rgba(99, 255, 217, 0.25);
+    }
+
+    .node-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0.6rem;
+    }
+
+    .node-title {
+      font-size: 1rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .node-chip {
+      font-size: 0.65rem;
+      letter-spacing: 0.25em;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .node-body {
+      font-size: 0.85rem;
+      color: rgba(230, 248, 255, 0.8);
+      min-height: 40px;
+      margin-bottom: 0.5rem;
+    }
+
+    .node-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    .flow-controls {
+      position: absolute;
+      top: 1.2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 0.6rem;
+      padding: 0.6rem 1rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(5, 10, 18, 0.65);
+      z-index: 7;
+    }
+
+    .flow-controls button {
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(94, 255, 199, 0.1);
+      border: 1px solid rgba(94, 255, 199, 0.4);
+      color: var(--accent);
+      letter-spacing: 0.2em;
+      font-size: 0.75rem;
+      padding: 0.35rem 0.8rem;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+
+    .flow-controls button:hover {
+      background: rgba(94, 255, 199, 0.2);
+    }
+
+    .flow-path {
+      stroke: rgba(99, 255, 217, 0.23);
+      stroke-width: 1.3;
+      fill: none;
+      transition: stroke 0.2s ease, stroke-width 0.2s ease;
+    }
+
+    .flow-path.is-related {
+      stroke-dasharray: 10 8;
+      stroke-width: 2.1;
+    }
+
+    .flow-path.is-downstream {
+      stroke: rgba(99, 255, 217, 0.8);
+    }
+
+    .flow-path.is-upstream {
+      stroke: rgba(255, 224, 102, 0.9);
+    }
+
+    .flow-path.is-active-run {
+      stroke: rgba(255, 224, 102, 1);
+      stroke-width: 3.2;
+      stroke-dasharray: 0;
+      filter: drop-shadow(0 0 12px rgba(255, 224, 102, 0.9));
+    }
+
+    .log-panel {
+      position: absolute;
+      top: 1.5rem;
+      left: 1.5rem;
+      width: 260px;
+      height: calc(100% - 3rem);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(3, 10, 20, 0.8);
+      padding: 1rem;
+      z-index: 6;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    .log-title {
+      font-size: 0.75rem;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .log-list {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding-right: 0.3rem;
+    }
+
+    .log-list::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .log-list::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.25);
+      border-radius: 999px;
+    }
+
+    .log-entry {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 0.45rem 0.6rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.18rem;
+    }
+
+    .log-entry small {
+      color: rgba(255, 255, 255, 0.55);
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    .log-entry span {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .gesture-pointer {
+      position: fixed;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      border: 2px solid rgba(94, 255, 199, 0.9);
+      mix-blend-mode: screen;
+      pointer-events: none;
+      box-shadow: 0 0 12px rgba(94, 255, 199, 0.65);
+      transform: translate(-50%, -50%);
+      opacity: 0;
+      transition: opacity 0.18s ease;
+      z-index: 10;
+    }
+
+    .gesture-pointer::after {
+      content: '';
+      position: absolute;
+      inset: 12px;
+      border: 2px solid rgba(255, 224, 102, 0.8);
+      border-radius: 50%;
+    }
+
+    .gesture-pointer.active {
+      opacity: 0.9;
+    }
+
+    .gesture-pointer.pinching {
+      animation: pinchPulse 0.5s ease-out 2;
+    }
+
+    @keyframes pinchPulse {
+      0% { transform: translate(-50%, -50%) scale(1); }
+      50% { transform: translate(-50%, -50%) scale(0.8); box-shadow: 0 0 24px rgba(255, 224, 102, 0.9); }
+      100% { transform: translate(-50%, -50%) scale(1); }
+    }
+
+    .guide-panel {
+      position: absolute;
+      bottom: 1.8rem;
+      right: 1.8rem;
+      padding: 0.9rem 1.1rem;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(3, 10, 20, 0.7);
+      z-index: 7;
+      width: 240px;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+    }
+
+    .guide-panel strong {
+      display: block;
+      margin-bottom: 0.4rem;
+      text-transform: uppercase;
+      letter-spacing: 0.3em;
+      font-size: 0.7rem;
+      color: var(--accent);
+    }
+
+    .guide-panel span {
+      display: block;
+      margin-bottom: 0.25rem;
+      color: rgba(255, 255, 255, 0.78);
+    }
+
+    .toast {
+      position: absolute;
+      top: 1.4rem;
+      right: 2rem;
+      padding: 0.5rem 0.9rem;
+      border-radius: 999px;
+      border: 1px solid rgba(94, 255, 199, 0.4);
+      background: rgba(2, 18, 18, 0.8);
+      letter-spacing: 0.25em;
+      font-size: 0.7rem;
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      z-index: 8;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .mini-path {
+      position: absolute;
+      left: 320px;
+      bottom: 1.8rem;
+      width: 210px;
+      height: 150px;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(0, 10, 15, 0.6);
+      z-index: 7;
+      padding: 0.6rem;
+    }
+
+    .mini-path svg {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <div class="flow-board">
+      <div class="vision-feed">
+        <video id="gesture-video" autoplay muted playsinline></video>
+        <canvas id="gesture-canvas"></canvas>
+        <span class="vision-tag">Holo Gesture Capture</span>
+      </div>
+      <div class="log-panel">
+        <div class="log-title">WORKFLOW LOG</div>
+        <div class="log-list" id="workflow-log"></div>
+      </div>
+      <svg class="flow-connections" id="flow-connections"></svg>
+      <div class="flow-nodes" id="flow-nodes"></div>
+      <div class="flow-controls">
+        <button id="align-grid">ALIGN GRID</button>
+        <button id="start-brew">RUN BREW</button>
+        <button id="ok-start">OK · START</button>
+      </div>
+      <div class="guide-panel">
+        <strong>GESTURE TIPS</strong>
+        <span>手掌入框 → 激活指针。</span>
+        <span>Pinch & Drag：移动节点。</span>
+        <span>挥手重做：恢复咖啡流程。</span>
+      </div>
+      <div class="toast" id="toast"></div>
+      <div class="mini-path">
+        <svg viewBox="0 0 210 150" id="mini-map"></svg>
+      </div>
+    </div>
+    <div class="gesture-pointer" id="gesture-pointer"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+  <script>
+    const nodesLayer = document.getElementById('flow-nodes');
+    const connectionsSvg = document.getElementById('flow-connections');
+    const miniMapSvg = document.getElementById('mini-map');
+    const toast = document.getElementById('toast');
+    const alignBtn = document.getElementById('align-grid');
+    const runBrewBtn = document.getElementById('start-brew');
+    const okStartBtn = document.getElementById('ok-start');
+    const workflowLog = document.getElementById('workflow-log');
+
+    const initialNodes = [
+      { id: 'prep-water', title: 'Fill Kettle', chip: 'WATER', detail: '加水至 92℃ · 600ml', x: 360, y: 220 },
+      { id: 'grind-beans', title: 'Grind Beans', chip: 'GRIND', detail: '18g 中细研磨', x: 640, y: 220 },
+      { id: 'bloom-stage', title: 'Bloom 30s', chip: 'BREW · 1', detail: '30ml 水 + 摇匀闷蒸', x: 940, y: 160 },
+      { id: 'pulse-pour', title: 'Pulse Pour', chip: 'BREW · 2', detail: '分段注水 150ml', x: 1180, y: 260 },
+      { id: 'drawdown', title: 'Drawdown', chip: 'BREW · 3', detail: '等待液面下降', x: 1380, y: 360 },
+      { id: 'serve-cup', title: 'Serve Cup', chip: 'FINISH', detail: '移除滤杯 · 拿起咖啡', x: 1580, y: 240 },
+    ];
+
+    const baseConnections = [
+      ['prep-water', 'grind-beans'],
+      ['grind-beans', 'bloom-stage'],
+      ['bloom-stage', 'pulse-pour'],
+      ['pulse-pour', 'drawdown'],
+      ['drawdown', 'serve-cup'],
+    ];
+
+    const originalLayout = {};
+    initialNodes.forEach((node) => {
+      originalLayout[node.id] = { x: node.x, y: node.y };
+    });
+
+    const brewChainOrder = ['prep-water', 'grind-beans', 'bloom-stage', 'pulse-pour', 'drawdown', 'serve-cup'];
+
+    const state = {
+      nodes: new Map(),
+      connections: [...baseConnections],
+      dragTarget: null,
+      dragOffset: { x: 0, y: 0 },
+      gestureDrag: null,
+      selectedNode: null,
+    };
+    let activeEdgeIndex = -1;
+
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
+    }
+
+    function calcDistance(a, b) {
+      if (!a || !b) return Infinity;
+      const dx = a.x - b.x;
+      const dy = a.y - b.y;
+      const dz = (a.z || 0) - (b.z || 0);
+      return Math.sqrt(dx * dx + dy * dy + dz * dz);
+    }
+
+    function createNode(nodeData) {
+      const el = document.createElement('section');
+      el.className = 'flow-node';
+      el.dataset.id = nodeData.id;
+      el.innerHTML = `
+        <div class="node-header">
+          <div class="node-title">${nodeData.title}</div>
+          <span class="node-chip">${nodeData.chip}</span>
+        </div>
+        <div class="node-body">${nodeData.detail}</div>
+        <div class="node-footer">
+          <span>STATUS · READY</span>
+          <span>HAND POUR</span>
+        </div>
+      `;
+
+      nodesLayer.appendChild(el);
+      state.nodes.set(nodeData.id, { ...nodeData, el });
+      positionNode(nodeData.id, nodeData.x, nodeData.y);
+      bindNodeInteractions(el, nodeData.id);
+    }
+
+    function positionNode(id, x, y) {
+      const node = state.nodes.get(id);
+      if (!node) return;
+      const minX = 320;
+      const minY = 80;
+      const maxX = Math.max(minX, window.innerWidth - 280);
+      const maxY = Math.max(minY, window.innerHeight - 220);
+      node.x = clamp(x, minX, maxX);
+      node.y = clamp(y, minY, maxY);
+      node.el.style.left = `${node.x}px`;
+      node.el.style.top = `${node.y}px`;
+    }
+
+    function bindNodeInteractions(el, id) {
+      el.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        setSelectedNode(id);
+        state.dragTarget = id;
+        const node = state.nodes.get(id);
+        state.dragOffset.x = event.clientX - node.x;
+        state.dragOffset.y = event.clientY - node.y;
+        el.setPointerCapture(event.pointerId);
+        el.dataset.active = 'true';
+      });
+
+      el.addEventListener('pointermove', (event) => {
+        if (state.dragTarget !== id) return;
+        const nextX = event.clientX - state.dragOffset.x;
+        const nextY = event.clientY - state.dragOffset.y;
+        positionNode(id, nextX, nextY);
+        renderConnections();
+      });
+
+      el.addEventListener('pointerup', (event) => {
+        if (state.dragTarget === id) {
+          state.dragTarget = null;
+          el.releasePointerCapture(event.pointerId);
+          el.dataset.active = 'false';
+        }
+      });
+
+      el.addEventListener('pointerleave', () => {
+        if (state.dragTarget === id) {
+          state.dragTarget = null;
+          el.dataset.active = 'false';
+        }
+      });
+
+      el.addEventListener('click', (event) => {
+        setSelectedNode(id);
+        ignitePath(id);
+      });
+    }
+
+    function ignitePath(startId) {
+      const startNode = state.nodes.get(startId);
+      const activeEdges = state.connections.filter(([from]) => from === startId);
+      if (!activeEdges.length) {
+        showToast('TERMINAL NODE');
+        return;
+      }
+      showToast('FLOW EXECUTING');
+      if (startNode) {
+        pushLog(`执行链条 · ${startNode.title}`);
+      }
+      let step = 0;
+      const interval = setInterval(() => {
+        if (step >= activeEdges.length) {
+          clearInterval(interval);
+          return;
+        }
+        const [, to] = activeEdges[step];
+        const node = state.nodes.get(to);
+        if (node) {
+          node.el.dataset.active = 'true';
+          pushLog(`完成 · ${node.title}`);
+          setTimeout(() => (node.el.dataset.active = 'false'), 800);
+        }
+        step += 1;
+      }, 250);
+    }
+
+    function renderConnections() {
+      connectionsSvg.innerHTML = '';
+      const currentActiveEdge = activeEdgeIndex||-1;
+      state.connections.forEach(([fromId, toId]) => {
+        const from = state.nodes.get(fromId);
+        const to = state.nodes.get(toId);
+        if (!from || !to) return;
+        const startX = from.x + 240;
+        const startY = from.y + 40;
+        const endX = to.x;
+        const endY = to.y + 20;
+        const midX = (startX + endX) / 2;
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', `M ${startX} ${startY} C ${midX} ${startY}, ${midX} ${endY}, ${endX} ${endY}`);
+        path.setAttribute('class', 'flow-path');
+        path.dataset.from = fromId;
+        path.dataset.to = toId;
+        connectionsSvg.appendChild(path);
+      });
+      renderMiniMap();
+      applySelectionStyles();
+      if (currentActiveEdge >= 0) {
+        setActiveEdge(currentActiveEdge);
+      }
+    }
+
+    function renderMiniMap() {
+      miniMapSvg.innerHTML = '';
+      const scale = 0.15;
+      state.connections.forEach(([fromId, toId]) => {
+        const from = state.nodes.get(fromId);
+        const to = state.nodes.get(toId);
+        if (!from || !to) return;
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', from.x * scale);
+        line.setAttribute('y1', from.y * scale);
+        line.setAttribute('x2', to.x * scale);
+        line.setAttribute('y2', to.y * scale);
+        line.setAttribute('stroke', 'rgba(255,255,255,0.3)');
+        line.setAttribute('stroke-width', '1');
+        miniMapSvg.appendChild(line);
+      });
+      state.nodes.forEach((node) => {
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', node.x * scale);
+        circle.setAttribute('cy', node.y * scale);
+        circle.setAttribute('r', '4');
+        circle.setAttribute('fill', node.id === 'prep-water' ? '#63ffd9' : 'rgba(255,255,255,0.7)');
+        miniMapSvg.appendChild(circle);
+      });
+    }
+
+    function applySelectionStyles() {
+      const selectedId = state.selectedNode;
+      const upstream = new Set();
+      const downstream = new Set();
+
+      if (selectedId) {
+        state.connections.forEach(([from, to]) => {
+          if (from === selectedId) downstream.add(to);
+          if (to === selectedId) upstream.add(from);
+        });
+      }
+
+      state.nodes.forEach((node) => {
+        const el = node.el;
+        if (!selectedId) {
+          el.classList.remove('is-selected', 'is-related');
+          return;
+        }
+        const isSelected = node.id === selectedId;
+        const isRelated = upstream.has(node.id) || downstream.has(node.id);
+        el.classList.toggle('is-selected', isSelected);
+        el.classList.toggle('is-related', !isSelected && isRelated);
+      });
+
+      connectionsSvg.querySelectorAll('.flow-path').forEach((path) => {
+        const from = path.dataset.from;
+        const to = path.dataset.to;
+        const isDownstream = selectedId && from === selectedId;
+        const isUpstream = selectedId && to === selectedId;
+        const isRelated = Boolean(isDownstream || isUpstream);
+        path.classList.toggle('is-related', isRelated);
+        path.classList.toggle('is-downstream', Boolean(isDownstream));
+        path.classList.toggle('is-upstream', Boolean(isUpstream));
+      });
+    }
+
+    function setSelectedNode(id) {
+      if (state.selectedNode === id) return;
+      state.selectedNode = id;
+      if (id && state.nodes.has(id)) {
+        pushLog(`选择节点 · ${state.nodes.get(id).title}`);
+      }
+      applySelectionStyles();
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toast.classList.remove('show'), 1500);
+    }
+
+    function pushLog(message) {
+      if (!workflowLog) return;
+      const stamp = new Date().toLocaleTimeString('zh-CN', {
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      entry.innerHTML = `<small>${stamp}</small><span>${message}</span>`;
+      workflowLog.prepend(entry);
+      while (workflowLog.children.length > 22) {
+        workflowLog.removeChild(workflowLog.lastChild);
+      }
+    }
+
+    function clearBrewTimer() {
+      if (brewTimeout) {
+        clearTimeout(brewTimeout);
+        brewTimeout = null;
+      }
+    }
+
+    function resetWorkflow(source = 'System') {
+      clearBrewTimer();
+      setActiveEdge(-1);
+      Object.entries(originalLayout).forEach(([id, pos]) => {
+        if (state.nodes.has(id)) {
+          positionNode(id, pos.x, pos.y);
+        }
+      });
+      setSelectedNode(null);
+      renderConnections();
+      pushLog(`${source}：工作流重置`);
+      showToast('WORKFLOW RESET');
+    }
+
+    function flashNode(id) {
+      const node = state.nodes.get(id);
+      if (!node) return;
+      node.el.dataset.active = 'true';
+      pushLog(`完成 · ${node.title}`);
+      setTimeout(() => (node.el.dataset.active = 'false'), 800);
+    }
+
+    function setActiveEdge(stepIndex) {
+      activeEdgeIndex = stepIndex;
+      connectionsSvg
+        .querySelectorAll('.flow-path')
+        .forEach((path) => path.classList.remove('is-active-run'));
+      if (stepIndex < 0 || stepIndex >= brewChainOrder.length - 1) return;
+      const from = brewChainOrder[stepIndex];
+      const to = brewChainOrder[stepIndex + 1];
+      const path = connectionsSvg.querySelector(`.flow-path[data-from="${from}"][data-to="${to}"]`);
+      if (path) {
+        path.classList.add('is-active-run');
+      }
+    }
+
+    function runBrewSequence(source = '自动冲煮') {
+      clearBrewTimer();
+      setActiveEdge(-1);
+      brewStepIndex = 0;
+      pushLog(`${source} 启动冲煮`);
+      showToast('BREW • RUN');
+      setSelectedNode(brewChainOrder[0]);
+      flashNode(brewChainOrder[0]);
+      scheduleNextBrewStep();
+    }
+
+    function scheduleNextBrewStep() {
+      if (brewStepIndex >= brewChainOrder.length - 1) {
+        clearBrewTimer();
+        setActiveEdge(-1);
+        setSelectedNode('serve-cup');
+        flashNode('serve-cup');
+        pushLog('冲煮完成 · 取走咖啡');
+        return;
+      }
+      const delay = 1000 + Math.random() * 4000;
+      brewTimeout = setTimeout(() => {
+        const currentId = brewChainOrder[brewStepIndex];
+        const nextId = brewChainOrder[brewStepIndex + 1];
+        setSelectedNode(currentId);
+        setActiveEdge(brewStepIndex);
+        flashNode(nextId);
+        brewStepIndex += 1;
+        scheduleNextBrewStep();
+      }, delay);
+    }
+
+    function detectOkGesture(landmarks) {
+      const thumbTip = landmarks[4];
+      const indexTip = landmarks[8];
+      const middleTip = landmarks[12];
+      const ringTip = landmarks[16];
+      if (!thumbTip || !indexTip || !middleTip || !ringTip) return false;
+      const thumbIndex = calcDistance(thumbTip, indexTip);
+      const thumbMiddle = calcDistance(thumbTip, middleTip);
+      const thumbRing = calcDistance(thumbTip, ringTip);
+      return thumbIndex < 0.035 && thumbMiddle > 0.07 && thumbRing > 0.07;
+    }
+
+    function triggerOkGestureStart() {
+      if (okGestureCooldown || brewTimeout) return;
+      okGestureCooldown = true;
+      pushLog('OK 手势启动冲煮');
+      runBrewSequence('OK 手势');
+      setTimeout(() => {
+        okGestureCooldown = false;
+      }, 1800);
+    }
+
+    if (alignBtn) {
+      alignBtn.addEventListener('click', () => {
+        let column = 0;
+        state.nodes.forEach((node) => {
+          const targetX = 360 + (column % 3) * 320;
+          const targetY = 160 + Math.floor(column / 3) * 220;
+          positionNode(node.id, targetX, targetY);
+          column += 1;
+        });
+        renderConnections();
+        showToast('GRID REALIGNED');
+        pushLog('重新排布节点');
+      });
+    }
+
+    if (runBrewBtn) {
+      runBrewBtn.addEventListener('click', () => {
+        runBrewSequence('按钮 RUN BREW');
+      });
+    }
+
+    if (okStartBtn) {
+      okStartBtn.addEventListener('click', () => {
+        runBrewSequence('OK 按钮');
+      });
+    }
+
+    document.addEventListener('click', (event) => {
+      if (
+        !event.target.closest('.flow-node') &&
+        !event.target.closest('.log-panel') &&
+        !event.target.closest('.flow-controls')
+      ) {
+        setSelectedNode(null);
+      }
+    });
+
+    // --- Initialization ---
+    initialNodes.forEach(createNode);
+    renderConnections();
+    pushLog('Workflow primed · 手冲流程待命');
+
+    // --- Gesture Control ---
+    const gesturePointer = document.getElementById('gesture-pointer');
+    const video = document.getElementById('gesture-video');
+    const canvas = document.getElementById('gesture-canvas');
+    const ctx = canvas.getContext('2d');
+
+    const hands = new Hands({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
+    });
+    hands.setOptions({
+      maxNumHands: 1,
+      modelComplexity: 1,
+      minDetectionConfidence: 0.6,
+      minTrackingConfidence: 0.5,
+    });
+
+    let pinchActive = false;
+    let pinchCooldown = false;
+    let gestureDragTarget = null;
+    let lastWaveX = null;
+    let waveMomentum = 0;
+    let waveCooldownActive = false;
+    let brewTimeout = null;
+    let brewStepIndex = 0;
+    let okGestureCooldown = false;
+    function updateGesturePointer(position, isPinching) {
+      if (!position) {
+        gesturePointer.classList.remove('active');
+        return;
+      }
+      gesturePointer.style.left = `${position.x}px`;
+      gesturePointer.style.top = `${position.y}px`;
+      gesturePointer.classList.add('active');
+      gesturePointer.classList.toggle('pinching', isPinching);
+    }
+
+    function handleGesture(landmarks) {
+      if (!landmarks) {
+        pinchActive = false;
+        gestureDragTarget = null;
+        updateGesturePointer(null);
+        trackWave(null, false);
+        return;
+      }
+      const thumbTip = landmarks[4];
+      const indexTip = landmarks[8];
+      if (!thumbTip || !indexTip) {
+        updateGesturePointer(null);
+        trackWave(null, false);
+        return;
+      }
+
+      const dx = thumbTip.x - indexTip.x;
+      const dy = thumbTip.y - indexTip.y;
+      const dz = (thumbTip.z || 0) - (indexTip.z || 0);
+      const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      const isPinching = distance < 0.05;
+
+      const pointerPos = {
+        x: clamp((1 - indexTip.x) * window.innerWidth, 0, window.innerWidth),
+        y: clamp(indexTip.y * window.innerHeight, 0, window.innerHeight),
+      };
+
+      updateGesturePointer(pointerPos, isPinching);
+      trackWave(pointerPos, isPinching);
+
+      const okGestureActive = detectOkGesture(landmarks);
+      if (okGestureActive) {
+        triggerOkGestureStart();
+        pinchActive = false;
+        gestureDragTarget = null;
+        return;
+      }
+
+      if (isPinching) {
+        if (!pinchActive && !pinchCooldown) {
+          pinchActive = true;
+          pinchCooldown = true;
+          const targetElement = document
+            .elementsFromPoint(pointerPos.x, pointerPos.y)
+            .find((el) => el.classList && el.classList.contains('flow-node'));
+          if (targetElement) {
+            const targetId = targetElement.dataset.id;
+            const node = state.nodes.get(targetId);
+            if (node) {
+              gestureDragTarget = {
+                id: targetId,
+                offsetX: pointerPos.x - node.x,
+                offsetY: pointerPos.y - node.y,
+              };
+              setSelectedNode(targetId);
+            }
+          }
+          setTimeout(() => (pinchCooldown = false), 180);
+        }
+        if (gestureDragTarget) {
+          const nextX = pointerPos.x - gestureDragTarget.offsetX;
+          const nextY = pointerPos.y - gestureDragTarget.offsetY;
+          positionNode(gestureDragTarget.id, nextX, nextY);
+          renderConnections();
+        }
+      } else {
+        pinchActive = false;
+        gestureDragTarget = null;
+      }
+    }
+
+    hands.onResults((results) => {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.save();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (results.image) {
+        ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+      }
+      if (results.multiHandLandmarks && results.multiHandLandmarks.length) {
+        results.multiHandLandmarks.forEach((landmarks) => {
+          drawConnectors(ctx, landmarks, HAND_CONNECTIONS, { color: '#63ffd9', lineWidth: 2 });
+          drawLandmarks(ctx, landmarks, { color: '#ffe066', lineWidth: 1 });
+        });
+        handleGesture(results.multiHandLandmarks[0]);
+      } else {
+        handleGesture(null);
+      }
+      ctx.restore();
+    });
+
+    function trackWave(pointerPos, isPinching) {
+      if (!pointerPos || isPinching) {
+        lastWaveX = null;
+        waveMomentum = 0;
+        return;
+      }
+      if (lastWaveX !== null) {
+        const deltaX = pointerPos.x - lastWaveX;
+        waveMomentum = waveMomentum * 0.6 + deltaX;
+        if (!waveCooldownActive && Math.abs(waveMomentum) > 200) {
+          waveCooldownActive = true;
+          resetWorkflow('挥手重做');
+          setTimeout(() => {
+            waveCooldownActive = false;
+            waveMomentum = 0;
+          }, 1500);
+        }
+      }
+      lastWaveX = pointerPos.x;
+    }
+
+    const camera = new Camera(video, {
+      onFrame: async () => {
+        await hands.send({ image: video });
+      },
+      width: 1280,
+      height: 720,
+    });
+
+    camera.start().catch((err) => {
+      console.warn('Camera error', err);
+      showToast('CAMERA BLOCKED');
+    });
+  </script>
+</body>
+</html>
