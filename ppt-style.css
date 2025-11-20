@@ -1,0 +1,95 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+:root {
+    --primary: #2563eb;
+    --secondary: #475569;
+    --accent: #f59e0b;
+}
+
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: 'Inter', sans-serif;
+    background: #1e1e1e;
+}
+
+/* Reveal.js Overrides if needed */
+.reveal .slides section {
+    color: #fff;
+}
+
+/* Camera Feed (Picture-in-Picture style) */
+.camera-feed {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 240px;
+    height: 135px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    z-index: 100;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    background: #000;
+}
+
+.camera-feed video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+    /* Mirror */
+}
+
+/* Laser Pointer */
+.laser-pointer {
+    position: fixed;
+    width: 20px;
+    height: 20px;
+    background: rgba(255, 0, 0, 0.8);
+    border-radius: 50%;
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.8), 0 0 30px rgba(255, 0, 0, 0.6);
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: opacity 0.2s;
+    opacity: 0;
+}
+
+.laser-pointer.active {
+    opacity: 1;
+}
+
+/* Gesture Feedback Toast */
+.gesture-toast {
+    position: fixed;
+    top: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100%);
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    padding: 10px 24px;
+    border-radius: 30px;
+    font-weight: 600;
+    z-index: 200;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.gesture-toast.show {
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Debug Canvas (Optional, hidden by default) */
+#gesture-canvas {
+    display: none;
+    /* Set to block for debugging */
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 240px;
+    height: 135px;
+    z-index: 101;
+    pointer-events: none;
+    transform: scaleX(-1);
+}

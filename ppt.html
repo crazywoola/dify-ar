@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gesture Controlled Presentation</title>
+
+    <!-- Reveal.js CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reset.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/theme/black.css" id="theme">
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="ppt-style.css">
+</head>
+
+<body>
+
+    <div class="reveal">
+        <div class="slides">
+            <!-- Slide 1 -->
+            <section>
+                <h1>Gesture PPT</h1>
+                <h3>Controlled by MediaPipe</h3>
+                <p>
+                    <small>Swipe Left/Right to Navigate</small><br>
+                    <small>Point with Index Finger for Laser</small>
+                </p>
+            </section>
+
+            <!-- Slide 2 -->
+            <section>
+                <h2>How it Works</h2>
+                <ul>
+                    <li><strong>MediaPipe Hands</strong> tracks your gestures.</li>
+                    <li><strong>Swipe</strong>: Move hand horizontally to change slides.</li>
+                    <li><strong>Laser</strong>: Extend index finger to point.</li>
+                </ul>
+            </section>
+
+            <!-- Slide 3 -->
+            <section>
+                <h2>Technology Stack</h2>
+                <div style="display: flex; justify-content: center; gap: 2rem;">
+                    <div style="background: #333; padding: 1rem; border-radius: 8px;">Reveal.js</div>
+                    <div style="background: #333; padding: 1rem; border-radius: 8px;">MediaPipe</div>
+                    <div style="background: #333; padding: 1rem; border-radius: 8px;">HTML5 Video</div>
+                </div>
+            </section>
+
+            <!-- Slide 4 -->
+            <section>
+                <h2>Interactive Demo</h2>
+                <p>Try pointing at this text!</p>
+                <pre><code data-trim data-noescape>
+const future = "Gesture Control";
+console.log(future);
+        </code></pre>
+            </section>
+
+            <!-- Slide 5 -->
+            <section>
+                <h2>Thank You</h2>
+                <p>Any Questions?</p>
+            </section>
+        </div>
+    </div>
+
+    <!-- UI Overlays -->
+    <div class="camera-feed">
+        <video id="gesture-video" autoplay muted playsinline></video>
+    </div>
+
+    <div class="laser-pointer" id="laser-pointer"></div>
+    <div class="gesture-toast" id="gesture-toast"></div>
+
+    <!-- Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+
+    <!-- Logic -->
+    <script src="ppt-script.js"></script>
+</body>
+
+</html>

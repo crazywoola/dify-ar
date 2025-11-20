@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hogwarts Dueling Club</title>
+    <link rel="stylesheet" href="harry-style.css">
+</head>
+
+<body>
+
+    <!-- Atmosphere -->
+    <div class="fog-layer"></div>
+
+    <!-- UI Layer -->
+    <div class="ui-layer">
+        <div class="spell-book">
+            <h2>Standard Book of Spells</h2>
+            <ul class="spell-list">
+                <li class="spell-item" id="spell-lumos">
+                    <span class="spell-name">Lumos</span>
+                    <span class="spell-gesture">Hold Wand Up</span>
+                </li>
+                <li class="spell-item" id="spell-incendio">
+                    <span class="spell-name">Incendio</span>
+                    <span class="spell-gesture">Draw a Circle</span>
+                </li>
+                <li class="spell-item" id="spell-stupefy">
+                    <span class="spell-name">Stupefy</span>
+                    <span class="spell-gesture">Quick Thrust Forward</span>
+                </li>
+                <li class="spell-item" id="spell-protego">
+                    <span class="spell-name">Protego</span>
+                    <span class="spell-gesture">Open Palm Shield</span>
+                </li>
+            </ul>
+        </div>
+
+        <div style="text-align: right;">
+            <h2 style="font-family: 'Cinzel'; color: #d4af37;">Training Dummy</h2>
+            <div id="bot-status" style="color: #aaa;">STATUS: READY</div>
+        </div>
+    </div>
+
+    <!-- Game World -->
+    <div class="training-bot" id="training-bot">
+        <div class="bot-head"></div>
+        <div class="bot-body">
+            <div class="bot-target"></div>
+        </div>
+    </div>
+
+    <!-- VFX Layer -->
+    <canvas id="vfx-canvas"></canvas>
+    <div class="wand-tip" id="wand-tip"></div>
+
+    <!-- Camera Feed -->
+    <video id="gesture-video" autoplay muted playsinline></video>
+
+    <!-- Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+
+    <!-- Game Logic -->
+    <script src="harry-script.js"></script>
+</body>
+
+</html>

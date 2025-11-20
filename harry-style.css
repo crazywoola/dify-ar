@@ -1,0 +1,244 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+
+:root {
+    --magic-gold: #d4af37;
+    --magic-glow: #fdf6e3;
+    --spell-red: #ff3333;
+    --spell-blue: #00ffff;
+    --spell-white: #ffffff;
+    --bg-dark: #0a0a0a;
+}
+
+body {
+    margin: 0;
+    overflow: hidden;
+    background: var(--bg-dark);
+    font-family: 'Crimson Text', serif;
+    color: var(--magic-glow);
+}
+
+/* Background Atmosphere */
+body::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #000000 100%);
+    z-index: -2;
+}
+
+/* Fog/Smoke Effect */
+.fog-layer {
+    position: absolute;
+    inset: 0;
+    background: url('https://raw.githubusercontent.com/danielstuart14/CSS_FOG_ANIMATION/master/img/fog1.png') repeat-x;
+    background-size: 200% 100%;
+    opacity: 0.3;
+    animation: fogMove 60s linear infinite;
+    z-index: -1;
+}
+
+@keyframes fogMove {
+    0% {
+        background-position: 0 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* UI Container */
+.ui-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10;
+    padding: 2rem;
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Spell List (Grimoire) */
+.spell-book {
+    width: 300px;
+    background: rgba(20, 10, 5, 0.85);
+    border: 2px solid var(--magic-gold);
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), inset 0 0 50px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+}
+
+.spell-book h2 {
+    font-family: 'Cinzel', serif;
+    color: var(--magic-gold);
+    text-align: center;
+    margin-top: 0;
+    border-bottom: 1px solid var(--magic-gold);
+    padding-bottom: 0.5rem;
+    text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+}
+
+.spell-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.spell-item {
+    margin-bottom: 1.2rem;
+    padding: 0.5rem;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+    transition: all 0.3s;
+}
+
+.spell-item.active {
+    background: rgba(212, 175, 55, 0.1);
+    border-color: var(--magic-gold);
+    transform: translateX(10px);
+}
+
+.spell-name {
+    font-family: 'Cinzel', serif;
+    font-weight: bold;
+    font-size: 1.2rem;
+    display: block;
+    color: #fff;
+}
+
+.spell-gesture {
+    font-style: italic;
+    font-size: 0.9rem;
+    color: #aaa;
+}
+
+/* Training Bot */
+.training-bot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 150px;
+    height: 220px;
+    z-index: 5;
+    transition: transform 0.1s;
+}
+
+.bot-body {
+    width: 100%;
+    height: 100%;
+    background: #4a3b2a;
+    /* Wood color */
+    border-radius: 40px 40px 20px 20px;
+    position: relative;
+    box-shadow: inset 10px 0 20px rgba(0, 0, 0, 0.5), 5px 5px 15px rgba(0, 0, 0, 0.5);
+    border: 4px solid #2a1b0a;
+}
+
+.bot-head {
+    position: absolute;
+    top: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 80px;
+    background: #d4af37;
+    /* Straw/Burlap */
+    border-radius: 50%;
+    border: 3px solid #2a1b0a;
+}
+
+.bot-target {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 60px;
+    border: 3px dashed #ff3333;
+    border-radius: 50%;
+    opacity: 0.6;
+}
+
+/* Bot Animations */
+.bot-hit {
+    animation: shake 0.5s cubic-bezier(.36, .07, .19, .97) both;
+}
+
+.bot-burn {
+    filter: sepia(100%) hue-rotate(-50deg) saturate(600%) contrast(0.8);
+    animation: burnPulse 0.5s infinite alternate;
+}
+
+@keyframes shake {
+
+    10%,
+    90% {
+        transform: translate3d(-1px, 0, 0);
+    }
+
+    20%,
+    80% {
+        transform: translate3d(2px, 0, 0);
+    }
+
+    30%,
+    50%,
+    70% {
+        transform: translate3d(-4px, 0, 0);
+    }
+
+    40%,
+    60% {
+        transform: translate3d(4px, 0, 0);
+    }
+}
+
+@keyframes burnPulse {
+    from {
+        box-shadow: 0 0 20px #ff4500;
+    }
+
+    to {
+        box-shadow: 0 0 50px #ff4500;
+    }
+}
+
+/* VFX Canvas */
+#vfx-canvas {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    pointer-events: none;
+}
+
+/* Camera Feed (Hidden but active) */
+#gesture-video {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    width: 160px;
+    opacity: 0.3;
+    border-radius: 8px;
+    transform: scaleX(-1);
+    z-index: 100;
+}
+
+/* Wand Tip Glow */
+.wand-tip {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: radial-gradient(circle, #fff 0%, rgba(255, 255, 255, 0) 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 30;
+    mix-blend-mode: screen;
+    opacity: 0;
+    transition: opacity 0.1s;
+    box-shadow: 0 0 20px #fff, 0 0 40px #fff;
+}
+
+.wand-tip.active {
+    opacity: 1;
+}
